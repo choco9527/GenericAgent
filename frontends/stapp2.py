@@ -555,9 +555,14 @@ pre, .stCodeBlock, .stCodeBlock pre {
     background-color: var(--anthropic-code-bg) !important;
     border: 1px solid var(--anthropic-border) !important;
     border-radius: 8px !important;
+    max-height: 120px !important;  /* 默认限制高度，更紧凑 */
+    overflow-y: auto !important;   /* 添加滚动条 */
+    font-size: 0.8em !important;   /* 更小的字体 */
+    margin: 0.4rem 0 !important;   /* 减少间距 */
+    line-height: 1.3 !important;   /* 紧凑的行高 */
 }
 
-/* Code inside pre blocks: no extra border/background */
+/* 代码块默认折叠样式 */
 pre code,
 .stCodeBlock code,
 [data-testid="stChatMessage"] pre code,
@@ -567,6 +572,9 @@ pre code,
     padding: 0 !important;
     font-size: inherit !important;
     color: var(--anthropic-text) !important;
+    display: block;
+    max-height: 110px;
+    overflow-y: auto;
 }
 
 /* ===== Toast / Alerts ===== */
@@ -1046,4 +1054,99 @@ if prompt := st.chat_input("请输入指令", disabled=st.session_state.streamin
     st.session_state.messages.append({"role": "user", "content": prompt, "time": datetime.now().strftime("%Y-%m-%d %H:%M:%S")})
     start_agent_task(prompt)
     st.rerun()
+
+# 添加代码块折叠功能的JavaScript
+st.components.v1.html("""
+<script>
+// 代码块折叠功能
+document.addEventListener('DOMContentLoaded', function() {
+    // 检查并折叠所有代码块
+    const checkAndProcessCodeBlocks = () => {
+        document.querySelectorAll('pre').forEach(pre => {
+            // 检查是否已经处理过
+            if (pre.dataset.processed) return;
+
+            // 获取代码内容
+            const codeContent = pre.textContent || pre.innerText;
+            const lineCount = codeContent.split('\\n').length;
+            const charCount = codeContent.length;
+
+            // 如果代码行数超过一定数量，或者字符数过多，则默认折叠
+            if (lineCount > 10 || charCount > 800) {
+                // 标记为已处理
+                pre.dataset.processed = 'true';
+
+                // 设置默认样式使其折叠
+                pre.style.maxHeight = '150px';
+                pre.style.overflowY = 'auto';
+                pre.style.cursor = 'pointer';
+                pre.style.position = 'relative';
+
+                // 添加折叠/展开指示器
+                const indicator = document.createElement('div');
+                indicator.innerHTML = '📁';
+                indicator.style.position = 'absolute';
+                indicator.style.top = '5px';
+                indicator.style.right = '5px';
+                indicator.style.background = 'rgba(0,0,0,0.1)';
+                indicator.style.borderRadius = '3px';
+                indicator.style.padding = '2px 5px';
+                indicator.style.fontSize = '0.9em';
+                indicator.style.zIndex = '10';
+                indicator.style.cursor = 'pointer';
+                indicator.title = '点击展开/折叠';
+
+                // 添加到pre元素
+                pre.appendChild(indicator);
+
+                // 添加点击事件
+                pre.addEventListener('click', function(e) {
+                    if (e.target === indicator || e.target === pre) {
+                        if (pre.style.maxHeight === 'none' || pre.style.maxHeight === 'auto') {
+                            // 折叠
+                            pre.style.maxHeight = '150px';
+                            pre.style.overflowY = 'auto';
+                            indicator.innerHTML = '📁';
+                        } else {
+                            // 展开
+                            pre.style.maxHeight = '600px';
+                            pre.style.overflowY = 'auto';
+                            indicator.innerHTML = '📂';
+                        }
+                    }
+                });
+            }
+        });
+    };
+
+    // 立即执行一次
+    checkAndProcessCodeBlocks();
+
+    // 定期检查新添加的代码块
+    const observer = new MutationObserver(function(mutations) {
+        let needsProcessing = false;
+        mutations.forEach(function(mutation) {
+            if (mutation.type === 'childList') {
+                mutation.addedNodes.forEach(function(node) {
+                    if (node.nodeType === 1) { // Element node
+                        if (node.tagName === 'PRE' || node.querySelector && node.querySelector('pre')) {
+                            needsProcessing = true;
+                        }
+                    }
+                });
+            }
+        });
+
+        if (needsProcessing) {
+            setTimeout(checkAndProcessCodeBlocks, 100);
+        }
+    });
+
+    observer.observe(document.body, {
+        childList: true,
+        subtree: true
+    });
+});
+</script>
+""")
 
