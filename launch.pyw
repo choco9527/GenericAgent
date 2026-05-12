@@ -92,6 +92,7 @@ if __name__ == '__main__':
     parser.add_argument('--wecom', action='store_true', help='启动 WeCom Bot');
     parser.add_argument('--dingtalk', '--dt', dest='dingtalk', action='store_true', help='启动 DingTalk Bot');
     parser.add_argument('--sched', action='store_true', help='启动计划任务调度器')
+    parser.add_argument('--no-window', action='store_true', help='不启动 WebUI 窗口（纯后台模式）')
     parser.add_argument('--llm_no', type=int, default=0, help='LLM编号')
     args = parser.parse_args()
     port = str(find_free_port()) if args.port == '0' else args.port
@@ -140,15 +141,21 @@ if __name__ == '__main__':
         print('[Launch] Task Scheduler started (duplicate prevented by scheduler port lock)')
     else: print('[Launch] Task Scheduler not enabled (--sched)')
 
-    monitor_thread = threading.Thread(target=idle_monitor, daemon=True)
-    monitor_thread.start()
-    if os.name == 'nt':
-        screen_width = get_screen_width()
-        x_pos = screen_width - WINDOW_WIDTH - RIGHT_PADDING
-    else: x_pos = 100
-    time.sleep(2) 
-    window = webview.create_window(
-        title='GenericAgent', url=f'http://localhost:{port}',
-        width=WINDOW_WIDTH, height=WINDOW_HEIGHT, x=x_pos, y=TOP_PADDING,
-        resizable=True, text_select=True)
-    webview.start()
+    if not args.no_window:
+        monitor_thread = threading.Thread(target=idle_monitor, daemon=True)
+        monitor_thread.start()
+        if os.name == 'nt':
+            screen_width = get_screen_width()
+            x_pos = screen_width - WINDOW_WIDTH - RIGHT_PADDING
+        else: x_pos = 100
+        time.sleep(2)
+        window = webview.create_window(
+            title='GenericAgent', url=f'http://localhost:{port}',
+            width=WINDOW_WIDTH, height=WINDOW_HEIGHT, x=x_pos, y=TOP_PADDING,
+            resizable=True, text_select=True)
+        webview.start()
+    else:
+        print('[Launch] No-window mode — services running in background')
+        try:
+            while True: time.sleep(1)
+        except KeyboardInterrupt: pass

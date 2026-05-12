@@ -24,6 +24,8 @@ def launch_frontend(cmd_parts, args=None):
     """启动前端/工具进程"""
     full_cmd = []
     for part in cmd_parts:
+        if part == "python":
+            part = sys.executable
         part = part.replace("{PROJECT_DIR}", PROJECT_DIR)
         part = part.replace("{FRONTENDS}", _frontends())
         part = part.replace("{REFLECT}", _reflect())
