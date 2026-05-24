@@ -38,7 +38,7 @@ FALLBACK_INSTALL_DIR="${HOME}/Applications"
 
 SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 PROJECT_ROOT="$(cd "${SCRIPT_DIR}/.." && pwd)"
-ICON_PATH="${PROJECT_ROOT}/assets/images/logo.jpg"
+ICON_PATH="${PROJECT_ROOT}/assets/images/app_icon_custom.png"
 LAUNCH_SCRIPT="${PROJECT_ROOT}/launch.pyw"
 
 echo -e "${CYAN}"
